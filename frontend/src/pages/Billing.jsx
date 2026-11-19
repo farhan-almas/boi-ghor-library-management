@@ -1,0 +1,27 @@
+import {useEffect,useMemo,useState} from 'react';
+import {useLocation,useNavigate} from 'react-router-dom';
+import {ArrowLeft,CheckCircle2,CreditCard,Receipt} from 'lucide-react';
+import DashboardLayout from '../layouts/DashboardLayout';
+import TopNav from '../components/TopNav';
+import {StatusBadge,Loading,EmptyState} from '../components/Common';
+import {api} from '../services/api';
+
+export default function Billing(){
+ const location=useLocation(), nav=useNavigate(), checkoutMode=location.pathname==='/checkout';
+ const [data,setData]=useState(null),[selected,setSelected]=useState(location.state?.billingIds || []),[method,setMethod]=useState('Simulated Card'),[message,setMessage]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const load=()=>api.get('/billing').then(setData).catch(e=>setError(e.message));
+ useEffect(()=>{load()},[]);
+ const unpaid=data?.history?.filter(x=>x.payment_status!=='paid')||[];
+ const selectedRows=unpaid.filter(x=>selected.includes(x.billing_id));
+ const total=useMemo(()=>selectedRows.reduce((s,x)=>s+Number(x.amount),0),[selectedRows]);
+ const toggle=id=>setSelected(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id]);
+ const checkout=async()=>{setError('');setBusy(true);try{const r=await api.post('/billing/checkout',{billing_ids:selected,payment_method:method});setMessage(`Payment successful — ৳${Number(r.amount).toFixed(2)} paid.`);setSelected([]);await load();nav('/billing')}catch(e){setError(e.message)}finally{setBusy(false)}};
+ if(!data)return <DashboardLayout><TopNav title="Billing"/><Loading/></DashboardLayout>;
+ if(checkoutMode)return <DashboardLayout><TopNav title="Checkout"/>{error&&<p className="bg-red-50 text-red-600 text-sm rounded-lg p-3 mb-4">{error}</p>}<button onClick={()=>nav('/billing')} className="text-sm text-brand-600 flex items-center gap-1 mb-4"><ArrowLeft size={15}/> Back to Billing</button><div className="grid lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h2 className="font-semibold text-gray-800 mb-4">Confirm payment</h2>{selectedRows.length===0?<EmptyState message="No invoices selected. Return to Billing and select unpaid invoices."/>:<div className="space-y-3">{selectedRows.map(x=><div key={x.billing_id} className="flex justify-between border-b pb-3"><div><p className="font-medium text-sm">{x.book_title}</p><p className="text-xs text-gray-500">{x.reason} · Invoice #{String(x.billing_id).padStart(5,'0')}</p></div><b>৳{Number(x.amount).toFixed(2)}</b></div>)}</div>}<div className="mt-6"><label className="text-xs font-medium text-gray-600">Payment method</label><select value={method} onChange={e=>setMethod(e.target.value)} className="input mt-1"><option>Simulated Card</option><option>Mobile Banking (Demo)</option><option>Cash at Library</option></select></div></div><div className="card p-6 h-fit"><p className="text-sm text-gray-500">Total</p><p className="text-3xl font-bold mt-1">৳{total.toFixed(2)}</p><button disabled={!selectedRows.length||busy} onClick={checkout} className="btn-primary w-full mt-5 flex justify-center items-center gap-2">{busy?'Processing...':<><CreditCard size={16}/> Confirm Checkout</>}</button></div></div></DashboardLayout>;
+
+ return <DashboardLayout><TopNav title="Billing"/>{message&&<p className="bg-emerald-50 text-emerald-700 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2"><CheckCircle2 size={16}/>{message}</p>}{error&&<p className="bg-red-50 text-red-600 text-sm rounded-lg px-3 py-2 mb-4">{error}</p>}
+ <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">{[['Total Fine',data.summary.total_fine],['Paid Amount',data.summary.paid_amount],['Outstanding',data.summary.outstanding_amount],['Last Payment',data.summary.last_payment?new Date(data.summary.last_payment.payment_date).toLocaleDateString():'—']].map(([l,v])=><div className="card p-5" key={l}><p className="text-xl font-bold"> {typeof v==='number'?`৳${v.toFixed(2)}`:v}</p><p className="text-sm text-gray-500 mt-1">{l}</p></div>)}</div>
+ <div className="flex justify-end mb-3"><button disabled={!selected.length} onClick={()=>nav('/checkout',{state:{billingIds:selected}})} className="btn-primary flex items-center gap-2"><Receipt size={15}/> Checkout {selected.length?`(${selected.length})`:''}</button></div>
+ <div className="card overflow-x-auto"><h2 className="font-semibold text-gray-800 p-5 pb-0">Billing History</h2>{data.history.length===0?<EmptyState message="No billing records yet."/>:<table className="w-full text-sm mt-3"><thead><tr className="text-left text-gray-400 border-b border-gray-100"><th className="p-4">Select</th><th className="p-4">Invoice</th><th className="p-4">Book</th><th className="p-4">Reason</th><th className="p-4">Amount</th><th className="p-4">Date</th><th className="p-4">Status</th></tr></thead><tbody>{data.history.map(h=><tr key={h.billing_id} className="border-b border-gray-50"><td className="p-4">{h.payment_status!=='paid'&&<input type="checkbox" checked={selected.includes(h.billing_id)} onChange={()=>toggle(h.billing_id)}/>}</td><td className="p-4">#{String(h.billing_id).padStart(5,'0')}</td><td className="p-4 font-medium">{h.book_title}</td><td className="p-4">{h.reason}</td><td className="p-4">৳{Number(h.amount).toFixed(2)}</td><td className="p-4">{new Date(h.created_at).toLocaleDateString()}</td><td className="p-4"><StatusBadge status={h.payment_status}/></td></tr>)}</tbody></table>}</div>
+ </DashboardLayout>
+}

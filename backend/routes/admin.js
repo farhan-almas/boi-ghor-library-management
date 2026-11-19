@@ -1,0 +1,10 @@
+const express=require('express');
+const router=express.Router();
+const ctrl=require('../controllers/adminController');
+const {authenticate,requireAdmin}=require('../middleware/auth');
+router.use(authenticate,requireAdmin);
+router.get('/users',ctrl.getUsers);
+router.put('/users/:id/role',ctrl.updateUserRole);
+router.get('/authors',ctrl.getAuthors);
+router.post('/authors',ctrl.createAuthor);
+module.exports=router;
