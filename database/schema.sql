@@ -257,7 +257,7 @@ INSERT INTO books (title, isbn, author_id, department_id, publisher, publication
 
 INSERT INTO users (name, email, password, phone, role) VALUES
 -- Demo password for both seeded users is "password". Change these credentials before deployment.
-('Jubayer Rahman', 'jubayer@lullpathagar.edu', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '01700000000', 'student'),
+('Farhan Almas Sharif', 'farhan.almas.sharif@gmail.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '01700000000', 'student'),
 ('Admin User', 'admin@lullpathagar.edu', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '01800000000', 'admin');
 
 INSERT INTO issued_books (user_id, book_id, issue_date, due_date, return_date, status, fine_amount) VALUES
