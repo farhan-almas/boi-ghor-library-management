@@ -95,8 +95,8 @@ Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
 
 Student:
 
-- Email: `jubayer@lullpathagar.edu`
-- Password: `password`
+- Email: `stdnt@gmail.com`
+- Password: `12345678`
 
 Administrator:
 
