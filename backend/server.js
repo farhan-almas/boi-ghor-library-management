@@ -61,8 +61,11 @@ async function startServer() {
     await pool.query('SELECT 1');
     await ensureDemoAdmin();
     app.listen(PORT, '0.0.0.0', () => console.log(`LULL PATHAGAR backend running on port ${PORT}`));
-  } catch (err) {
-    console.error('Unable to start LULL PATHAGAR backend:', err.message);
+    } catch (err) {
+    console.error('Unable to start LULL PATHAGAR backend:');
+    console.error(err);
+    console.error('Error code:', err.code);
+    console.error('Error message:', err.message);
     process.exit(1);
   }
 }

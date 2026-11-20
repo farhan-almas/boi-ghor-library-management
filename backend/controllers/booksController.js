@@ -182,14 +182,18 @@ exports.getExplore = async (req, res) => {
   try {
     const userId = req.user.user_id;
 
+    
     const [recentDepartments] = await pool.query(
-      `SELECT DISTINCT b.department_id
+      `SELECT b.department_id
        FROM reading_history rh
        JOIN books b ON rh.book_id = b.book_id
        WHERE rh.user_id = ?
-       ORDER BY rh.start_date DESC LIMIT 2`,
+       GROUP BY b.department_id
+       ORDER BY MAX(rh.start_date) DESC
+       LIMIT 2`,
       [userId]
     );
+
     const deptIds = recentDepartments.map((d) => d.department_id);
 
     let recommended = [];
@@ -205,15 +209,21 @@ exports.getExplore = async (req, res) => {
       recommended = rows;
     }
 
+    
     const [popular] = await pool.query(
-      `SELECT b.book_id, b.title, a.author_name, d.department_name, b.cover_color, b.cover_image,
-              COUNT(ib.issue_id) AS issue_count
-       FROM books b
-       JOIN authors a ON b.author_id = a.author_id
-       JOIN departments d ON b.department_id = d.department_id
-       LEFT JOIN issued_books ib ON b.book_id = ib.book_id
-       WHERE b.is_active = TRUE GROUP BY b.book_id ORDER BY issue_count DESC LIMIT 6`
-    );
+  `SELECT b.book_id, b.title, a.author_name, d.department_name,
+          b.cover_color, b.cover_image,
+          COUNT(ib.issue_id) AS issue_count
+   FROM books b
+   JOIN authors a ON b.author_id = a.author_id
+   JOIN departments d ON b.department_id = d.department_id
+   LEFT JOIN issued_books ib ON b.book_id = ib.book_id
+   WHERE b.is_active = TRUE
+   GROUP BY b.book_id, b.title, a.author_name, d.department_name, b.cover_color, b.cover_image
+   ORDER BY issue_count DESC
+   LIMIT 6`
+);
+
 
     const [newArrivals] = await pool.query(`${BASE_SELECT} WHERE b.is_active = TRUE ORDER BY b.created_at DESC LIMIT 6`);
 
